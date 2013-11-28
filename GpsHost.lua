@@ -6,7 +6,13 @@
 local gpsPos = false
 local tArgs = { ... }
 
-rednet.open("right")
+local modem = peripheral.wrap("right")
+if not modem.isOpen(gps.CHANNEL_GPS) then
+  modem.open(gps.CHANNEL_GPS)
+  print("opened gps channel")
+else
+  print("gps channel already open")
+end
 
 if fs.exists("gpsPos") then
   local f = fs.open("gpsPos", "r")
@@ -30,10 +36,13 @@ end
 if gpsPos then
   print("gps host up and running on position "..gpsPos)
   while true do
-    sender,message,distance = rednet.receive()
-	if message == "PING" then
-	  rednet.send(sender, gpsPos)
-	  print("served request from "..sender)
+    local e, p1, p2, p3, p4, p5 = os.pullEvent()
+	if e == "modem_message" then
+	  local side, channel, replyChannel, msg, distance = p1, p2, p3, p4, p5
+	  if channel == gps.CHANNEL_GPS and sMessage == "PING" then
+	    modem.transmit( replyChannel, gps.CHANNEL_GPS, gpsPos)
+	    print("served request from "..replyChannel)
+	  end
 	end
   end
 end
