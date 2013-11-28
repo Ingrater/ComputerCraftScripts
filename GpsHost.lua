@@ -39,7 +39,7 @@ if gpsPos then
     local e, p1, p2, p3, p4, p5 = os.pullEvent()
 	if e == "modem_message" then
 	  local side, channel, replyChannel, msg, distance = p1, p2, p3, p4, p5
-	  if channel == gps.CHANNEL_GPS and sMessage == "PING" then
+	  if channel == gps.CHANNEL_GPS and msg == "PING" then
 	    modem.transmit( replyChannel, gps.CHANNEL_GPS, gpsPos)
 	    print("served request from "..replyChannel)
 	  end
