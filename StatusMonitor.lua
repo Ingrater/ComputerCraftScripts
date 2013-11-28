@@ -21,7 +21,7 @@ if fs.exists("log") then
   local wrap = false
   while true do
     local line = f.readLine()
-	if not line
+	if not line then
 	  break
 	end
     lines[i] = line
@@ -52,7 +52,7 @@ if fs.exists("log") then
 end
 
 while true do
-  local id, msg = rednet.recieve()
+  local id, msg = rednet.receive()
   local flog = fs.open("log", "a")
   local output = id.."> "..(msg or "nil");
   flog.writeLine(output);

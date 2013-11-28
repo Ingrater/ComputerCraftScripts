@@ -3,7 +3,8 @@
 --list of mining turtles as <name> = <id>
 local turtles = {
   sklave1 = 23,
-  sklave3 = 25
+  sklave3 = 25,
+  sklave4 = 32
 }
 
 local tArgs = { ... }
@@ -23,14 +24,15 @@ else
 	  local id, msg = rednet.recieve(10)
 	  while id do
 	    if id == turtles[name] and string.find(msg, "returning home") then
-		  print("turtle is returing: "..msg)
+		  print("turtle is returing: "..(msg or "nil"))
 		  retry = false
 		  break
 		else
-		  print("recieved message: "..msg)
+		  print("recieved message: "..(msg or "nil"))
 		end
-		id, msg = rednet.recieve(10)
+		id, msg = rednet.receive(10)
 	  end
+	end
   else
     print("There is no known turtle with the name '"..name.."'")
 	print("To add new turtles you have to edit the script")

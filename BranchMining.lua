@@ -5,7 +5,7 @@ local branchesPerLevel = 10 -- how many branches per level
 local branchSpacing = 4 -- spacing between branches
 local levelSpacing = 4  -- spacing between levels
 local statusMonitorId = 22 -- id of the status monitor
-local controlMonitorId = 25 -- id of the control monitor
+local controlMonitorId = 34 -- id of the control monitor
 local numRetries = 20       -- number of retires before crying for help
 local maxValuableDepth = 12 -- maximum recursion depth when following valuables
 
@@ -591,7 +591,7 @@ function mine(dist)
     if i > 2 then
       i = 0
       dropCrap()
-	  checkForReturnRequest()
+	  --checkForReturnRequest()
 	  local into = math.abs(curPos[1] - branchStart[1])
 	  report(into.." blocks into brach "..branchNum.." on level "..level)
     else
@@ -758,6 +758,7 @@ function loadFromDisk()
       local path = "/"..mpath.."/mineData"
       if fs.exists("mineData") then
         loadFromPath("mineData")
+		branchNum = branchNum - 1
       else
         loadFromPath(path)
       end
