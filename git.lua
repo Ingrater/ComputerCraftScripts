@@ -8,6 +8,10 @@ function work()
     print("git <filename> <destination>")
   else
     local h = http.get("https://raw.github.com/Ingrater/ComputerCraftScripts/master/"..tArgs[1])
+	if not h then
+	  print("file '"..tArgs[1].." does not exist in git repository")
+	  return
+	end
     local contents = h.readAll()
     if fs.exists(tArgs[2]) then
       print("The file '"..tArgs[2].."' does already exist, overwrite?")
