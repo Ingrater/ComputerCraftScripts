@@ -19,7 +19,11 @@ if fs.exists("log") then
   
   local i = 1
   local wrap = false
-  while line = f.readLine() do
+  while true do
+    local line = f.readLine()
+	if not line
+	  break
+	end
     lines[i] = line
 	i = i + 1
 	if i > numLinesFromLog + 1 then
