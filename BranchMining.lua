@@ -544,7 +544,7 @@ end
 
 function checkForReturnRequest()
   while true do
-    local id, msg = rednet.recieve(1)
+    local id, msg = rednet.receive(1)
 	if not id then
 	  break
 	end
