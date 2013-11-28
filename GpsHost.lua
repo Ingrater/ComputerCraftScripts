@@ -12,7 +12,7 @@ if fs.exists("gpsPos") then
   local f = fs.open("gpsPos", "r")
   gpsPos = f.readLine()
   f.close()
-else if #tArgs < 3 then
+elseif #tArgs < 3 then
   error("need position <x> <y> <z> as arguments on first use")
 else
   local x = tonumber(tArgs[1])
@@ -35,4 +35,5 @@ if gpsPos then
 	  rednet.send(sender, gpsPos)
 	  print("served request from "..sender)
 	end
+  end
 end
