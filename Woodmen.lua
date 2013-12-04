@@ -1,3 +1,7 @@
+--TODO compare to oak leaves to detect valuables
+--TODO improve rotateTo
+--TODO moveTo should use rotateTo
+
 local statusMonitorId = 22 -- id of the status monitor
 local firstTree = {2, -5, 2}
 local dropOverPoint = {0, 0, 3}
@@ -5,7 +9,7 @@ local dropPoint = {0, 0, 0}
 local treesPerRow = 5
 local numTrees = 30
 local maxValuableDepth = 15
-local waitAmount = 10
+local waitAmount = 300
 
 -- state variables
 local curPos = {0, 0, 0}
@@ -225,18 +229,20 @@ function dig()
   end
 end
 
+function sign(x)
+  if x < 0 then
+    return -1
+  end
+  return 1
+end
+
 function moveHelper(axis, index, loc, twoHigh)
   if loc[index] - curPos[index] ~= 0 then
     local dist = loc[index] - curPos[index]
-    -- check that we look in any x direction
-    if curDir[1] ~= index then
-      turnLeft()
-    end
-    -- check that we look in the correct x direction
-    if curDir[2] > 0 and dist < 0 or curDir[2] < 0 and dist > 0 then
-      turnLeft()
-      turnLeft()
-    end
+    
+    -- look into the correct direction
+    rotateTo({index, sign(dist)})
+    
     -- move the requested amount
     if dist < 0 then
       dist = -dist
@@ -303,12 +309,26 @@ function moveTo(loc, order)
   return true
 end
 
-function rotateTo(dir)
-  local diff1 = curDir[1] - dir[1]
-  local diff2 = curDir[2] - dir[2]
-  while not epsilonCompare(curDir[1], dir[1]) 
-     or not epsilonCompare(curDir[2], dir[2]) do
+function rotateTo(dir)  
+  local dirCopy = tableCopy(curDir)
+  local curIndex = curDir[1] + curDir[2]
+  local newIndex = dir[1] + dir[2]
+  
+  if epsilonCompare(curDir[1], dir[1]) and epsilonCompare(curDir[2], dir[2]) == false then
+    -- turn 180 degrees
     turnLeft()
+    turnLeft()
+  elseif epsilonCompare(newIndex, 0) and epsilonCompare(curIndex, 3) then
+    turnRight()
+  elseif epsilonCompare(newIndex, 3) and epsilonCompare(curIndex, 0) then
+    turnLeft()
+  elseif newIndex > curIndex then
+    turnRight()
+  elseif newIndex < curIndex then
+    turnLeft()
+  end
+  if epsilonCompare(curDir[1], dir[1]) == false or epsilonCompare(curDir[2], dir[2]) == false then
+    error("should rotate to {"..dir[1]..", "..dir[2].."} from {"..dirCopy[1]..", "..dirCopy[2].."} ended up in {"..curDir[1]..","..curDir[2].."}");
   end
 end
 
@@ -338,7 +358,7 @@ function isValuableUp()
 end
 
 function mineValuableUp()
-  if isValuableUp() then
+  if isValuableUp() == true then
     valuableDepth = valuableDepth + 1
     local returnToPos = tableCopy(curPos)
     local returnToDir = tableCopy(curDir)
@@ -358,7 +378,7 @@ function mineValuableUp()
 end
 
 function mineValuable()
-  if isValuableInFront() then
+  if isValuableInFront() == true then
     valuableDepth = valuableDepth + 1
     print("found valuable")
     local returnToPos = tableCopy(curPos)
@@ -392,24 +412,24 @@ function report(msg)
 end
 
 function savePosition()
-  --[[local f = fs.open("forstPos", "w")
+  local f = fs.open("forstPos", "w")
   f.write(curPos[1].."\n"..curPos[2].."\n"..curPos[3].."\n")
   --print("pos = "..curPos[1].." "..curPos[2].." "..curPos[3])
-  f.close()--]]
+  f.close()
 end
 
 function saveDirection()
- --[[local f = fs.open("forstDir", "w")
+  local f = fs.open("forstDir", "w")
   --print("dir = "..curDir[1].." "..curDir[2])
   f.write(curDir[1].."\n"..curDir[2].."\n")
-  f.close()--]]
+  f.close()-
 end
 
 function setState(newState)
   state = newState
-  --[[local f = fs.open("forstState", "w")
+  local f = fs.open("forstState", "w")
   f.write(state.."\n")
-  f.close()--]]
+  f.close()
 end
 
 function restoreState()
@@ -487,9 +507,8 @@ function checkTree(i)
 	  up()
 	  turtle.select(2)
 	  turtle.placeDown()
-  elseif turtle.select(1) and turtle.compare() then
+  elseif turtle.select(1) and turtle.compare() == true then
 	  -- a tree block
-	  turtle.select(1)
 	  forward()
 	  mineValuableUp()
 	  up()
@@ -513,7 +532,7 @@ function checkTreesBackwards()
 end
 
 function refillSaplings()
-  if turtle.getItemCount(2) < 2 then
+  if turtle.getItemCount(2) < numTrees * 2 then
     turtle.select(2)
 	  while turtle.getItemCount(2) < 64 do
 	    local oldCount = turtle.getItemCount(2)
@@ -554,7 +573,7 @@ function work()
       rotateTo({1, 1})
       turnLeft()
       refuelFromInventory()
-      for i=3,16 do
+      for i=4,16 do
         turtle.select(i)
         if turtle.getItemCount(2) < 64 and turtle.compareTo(2) then
           turtle.transferTo(2, math.min(turtle.getItemSpace(2), turtle.getItemCount(i)))
@@ -571,9 +590,23 @@ function work()
   end
 end
 
+function upABit()
+  for i=1,6 do
+    up()
+  end
+end
+
 function boot()
    if restoreState() then
-     --TODO go back to start
+     if state == "check" then
+       upABit()
+       moveTo(treePos(1), {"x", "y", "z"})
+     elseif state == "checkBackwards" then
+       upABit()
+       moveTo(treePos(numTrees), {"x", "y", "z"})   
+     elseif state == "deliver" then
+       upABit()     
+     end
    end
    
    work()
