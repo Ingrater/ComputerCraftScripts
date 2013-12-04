@@ -422,7 +422,7 @@ function saveDirection()
   local f = fs.open("forstDir", "w")
   --print("dir = "..curDir[1].." "..curDir[2])
   f.write(curDir[1].."\n"..curDir[2].."\n")
-  f.close()-
+  f.close()
 end
 
 function setState(newState)
