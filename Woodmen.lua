@@ -1,15 +1,11 @@
---TODO compare to oak leaves to detect valuables
---TODO improve rotateTo
---TODO moveTo should use rotateTo
-
 local statusMonitorId = 22 -- id of the status monitor
-local firstTree = {2, -5, 2}
+local firstTree = {3, -6, 2}
 local dropOverPoint = {0, 0, 3}
 local dropPoint = {0, 0, 0}
 local treesPerRow = 5
 local numTrees = 30
 local maxValuableDepth = 15
-local waitAmount = 300
+local waitAmount = 400
 
 -- state variables
 local curPos = {0, 0, 0}
@@ -409,27 +405,28 @@ function report(msg)
     pos = "("..x..", "..y..", "..z..")"
   end
   rednet.send(statusMonitorId, getName()..pos..": "..msg)
+  print(msg)
 end
 
 function savePosition()
-  local f = fs.open("forstPos", "w")
+  --[[local f = fs.open("forstPos", "w")
   f.write(curPos[1].."\n"..curPos[2].."\n"..curPos[3].."\n")
   --print("pos = "..curPos[1].." "..curPos[2].." "..curPos[3])
-  f.close()
+  f.close()--]]
 end
 
 function saveDirection()
-  local f = fs.open("forstDir", "w")
+  --[[local f = fs.open("forstDir", "w")
   --print("dir = "..curDir[1].." "..curDir[2])
   f.write(curDir[1].."\n"..curDir[2].."\n")
-  f.close()
+  f.close()--]]
 end
 
 function setState(newState)
   state = newState
-  local f = fs.open("forstState", "w")
+  --[[local f = fs.open("forstState", "w")
   f.write(state.."\n")
-  f.close()
+  f.close()--]]
 end
 
 function restoreState()
@@ -497,6 +494,19 @@ function treePos(num)
 		   firstTree[3]}
 end
 
+function zigZag(i)
+  i = i - 1 -- deal with lua arrays starting at index 1
+  local column = math.floor(i / treesPerRow)
+  local row = math.fmod(i, treesPerRow)
+  local isOddColumn = math.fmod(column, 2)
+  if isOddColumn > 0 then
+    i = column * treesPerRow + (treesPerRow - (row + 1))
+  end
+  
+  i = i + 1
+  return i
+end
+
 function checkTree(i)
   moveTo(treePos(i), {"x", "y", "z"})
   rotateTo({1, 1})
@@ -512,22 +522,38 @@ function checkTree(i)
 	  forward()
 	  mineValuableUp()
 	  up()
-	  turtle.select(2)
-	  turtle.placeDown()
   else
     up()
   end
 end
 
 function checkTrees()
+  local lastDst = false
   for i=1,numTrees do
-    checkTree(i)
+    local treeIndex = zigZag(i)
+    local curDst = treePos(treeIndex)
+	if lastDst and lastDst[1] ~= curDst[1] then
+	  -- avoid chopping down a tree when switching rows
+	  rotateTo({2, 1})
+	  forward()
+	end
+	lastDst = curDst
+	checkTree(treeIndex)
   end
 end
 
 function checkTreesBackwards()
+  local lastDst = false
   for i=numTrees,1,-1 do
-    checkTree(i)
+    local treeIndex = zigZag(i)
+    local curDst = treePos(treeIndex)
+	if lastDst and lastDst[1] ~= curDst[1] then
+	  -- avoid chopping down a tree when switching rows
+	  rotateTo({2, 1})
+	  forward()
+	end
+	lastDst = curDst
+	checkTree(treeIndex)
   end
 end
 
@@ -539,7 +565,7 @@ function refillSaplings()
 	    turtle.suck()
 	    if turtle.getItemCount(2) <= oldCount then
 	      report("no more saplings in chest")
-		    os.sleep(60)
+		  os.sleep(60)
 	    end
 	  end
   end
@@ -563,10 +589,10 @@ function work()
       checkTreesBackwards()
       rotateTo({1, 1})
       back()
-      setState("wait2")
+      setState("deliver")
     elseif state == "wait2" then
       os.sleep(waitAmount)
-      setState("deliver")
+      setState("check")
     elseif state == "deliver" then
       moveTo(dropOverPoint, {"z", "y", "x"})
       moveTo(dropPoint, {"x", "y", "z"})
@@ -583,7 +609,7 @@ function work()
       turnRight()
       refillSaplings()
       moveTo(dropOverPoint, {"z", "y", "x"})
-      setState("check")
+      setState("wait2")
     else
       error("Unkown state "..state)
     end
@@ -613,11 +639,11 @@ function boot()
 end
 
 rednet.open("right")
-print("ver 0.0.0")
+print("ver 0.1.0")
 
 local status, err = pcall(boot)
 if not status then
-  if string.find(err, "waiting for manual reboot") then
+  if string.find(err, "waiting for manual reboot") or string.find("Terminated") then
     print(err)
   else
     while true do
