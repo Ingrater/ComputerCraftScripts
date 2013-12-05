@@ -342,7 +342,7 @@ function findWoodStack()
 	end
   end
   -- no existing stack, find a empty one
-  while turlte.getItemCount(1) < 3 do
+  while turtle.getItemCount(1) < 3 do
     report("HELP! need fuel")
 	os.sleep(120)
   end
