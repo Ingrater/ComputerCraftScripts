@@ -626,17 +626,24 @@ function work()
       moveTo(dropOverPoint, {"z", "y", "x"})
       moveTo(dropPoint, {"x", "y", "z"})
       rotateTo({1, 1})
+	  turtle.select(2)
+	  for i=3,16 do
+	    if turtle.getItemCount(i) > 0 and turtle.compareTo(i) then
+		  turtle.select(i)
+		  turtle.drop()
+		  turtle.select(2)
+		end
+	  end
       turnLeft()
       refuelFromInventory()
-      for i=4,16 do
-        turtle.select(i)
-        if turtle.getItemCount(2) < 64 and turtle.compareTo(2) then
-          turtle.transferTo(2, math.min(turtle.getItemSpace(2), turtle.getItemCount(i)))
-        end
-        turtle.drop()
+      for i=3,16 do
+	    if turtle.getItemCount(i) > 0 then
+          turtle.select(i)
+          turtle.drop()
+		end
       end
       turnRight()
-      refillSaplings()
+	  refillSaplings()
       moveTo(dropOverPoint, {"z", "y", "x"})
       setState("wait2")
     else
@@ -668,7 +675,7 @@ function boot()
 end
 
 rednet.open("right")
-print("ver 0.1.0")
+print("ver 0.2.0")
 
 local status, err = pcall(boot)
 if not status then
