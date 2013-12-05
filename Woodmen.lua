@@ -331,39 +331,68 @@ end
 -- depth of recursion
 local valuableDepth = 0
 
-function isValuableInFront()
+function findWoodStack()
+  refuelFromInventory()
+  turtle.select(1)
+  for i=3,16 do
+    if turtle.getItemCount(i) > 0 then
+	  if turtle.compareTo(i) and turtle.getItemCount(i) < 32 then
+	    return i
+	  end
+	end
+  end
+  -- no existing stack, find a empty one
+  while turlte.getItemCount(1) < 3 then
+    report("HELP! need fuel")
+	os.sleep(120)
+  end
+  for i=3,16 do
+    if turtle.getItemCount(i) < 1 then
+	  turtle.transferTo(i, 1)
+	  return i
+	end
+  end
+  error("failed to find woodstack")
+end
+
+function isValuableInFront(woodStack)
   if valuableDepth > maxValuableDepth then
     return false
   end
   if not turtle.detect() then
     return false
   end
-  turtle.select(1)
-  return turtle.compare()
+  turtle.select(woodStack)
+  local oldCount = turtle.getItemCount(woodStack)
+  turtle.dig()
+  local newCount = turtle.getItemCount(woodStack)
+  return newCount > oldCount
 end
 
-function isValuableUp()
+function isValuableUp(woodStack)
   if valuableDepth > maxValuableDepth then
     return false
   end
   if not turtle.detectUp() then
     return false
   end
-  turtle.select(1)
-  return turtle.compareUp()
+  turtle.select(woodStack)
+  local oldCount = turtle.getItemCount(woodStack)
+  turtle.digUp()
+  local newCount = turtle.getItemCount(woodStack)
+  return newCount > oldCount  
 end
 
-function mineValuableUp()
-  if isValuableUp() == true then
+function mineValuableUp(woodStack)
+  if isValuableUp(woodStack) == true then
     valuableDepth = valuableDepth + 1
     local returnToPos = tableCopy(curPos)
     local returnToDir = tableCopy(curDir)
-    digUp()
     if valuableDepth < maxValuableDepth then
       up()
-      mineValuableUp()
+      mineValuableUp(woodStack)
       for i=1,4 do
-        mineValuable()
+        mineValuable(woodStack)
         turnLeft()
       end
     end
@@ -373,18 +402,17 @@ function mineValuableUp()
   end
 end
 
-function mineValuable()
-  if isValuableInFront() == true then
+function mineValuable(woodStack)
+  if isValuableInFront(woodStack) == true then
     valuableDepth = valuableDepth + 1
     print("found valuable")
     local returnToPos = tableCopy(curPos)
     local returnToDir = tableCopy(curDir)
-    dig()
-    mineValuableUp()
+    mineValuableUp(woodStack)
     if valuableDepth < maxValuableDepth then
       forward()
       for i=1,4 do
-        mineValuable()
+        mineValuable(woodStack)
         turnLeft()
       end
     end
@@ -520,7 +548,8 @@ function checkTree(i)
   elseif turtle.select(1) and turtle.compare() == true then
 	  -- a tree block
 	  forward()
-	  mineValuableUp()
+	  local woodStack = findWoodStack()
+	  mineValuableUp(woodStack)
 	  up()
   else
     up()
