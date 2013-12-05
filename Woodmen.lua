@@ -672,7 +672,7 @@ print("ver 0.1.0")
 
 local status, err = pcall(boot)
 if not status then
-  if string.find(err, "waiting for manual reboot") or string.find("Terminated") then
+  if string.find(err, "waiting for manual reboot") or string.find(err, "Terminated") then
     print(err)
   else
     while true do
